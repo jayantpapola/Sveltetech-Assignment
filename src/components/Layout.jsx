@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/reducers/authSlice";
 import { setDarkMode } from "../redux/reducers/settingsSlice";
 import Button from "./Button";
+import Modal from "./Modal"; // <-- import your modal
 import { useState } from "react";
 
 export default function Layout() {
@@ -10,6 +11,7 @@ export default function Layout() {
   const dark = useSelector((s) => s.settings.darkMode);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   if (typeof document !== "undefined")
     document.documentElement.classList.toggle("dark", dark);
@@ -31,16 +33,18 @@ export default function Layout() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
+          {/* Theme Toggle Button */}
           <button
             onClick={() => dispatch(setDarkMode(!dark))}
-            className="text-sm"
+            className="px-3 py-1 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-700 transition"
           >
-            Toggle Theme
+            {dark ? "🌙 Dark" : "☀️ Light"}
           </button>
 
+          {/* Logout Button */}
           <Button
-            className="bg-gray-200 dark:bg-gray-800"
-            onClick={() => dispatch(logout())}
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => setLogoutModalOpen(true)}
           >
             Logout
           </Button>
@@ -60,7 +64,7 @@ export default function Layout() {
         className={`fixed top-14 left-0 bottom-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-3 z-30
         transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out md:translate-x-0  md:top-16`}
+        } transition-transform duration-300 ease-in-out md:translate-x-0 md:top-16`}
       >
         <nav className="space-y-1">
           <NavLink to="/dashboard" className={navClass}>
@@ -89,6 +93,32 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        open={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        title="Confirm Logout"
+      >
+        <p className="mb-4">Are you sure you want to logout?</p>
+        <div className="flex justify-end gap-2">
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
+            onClick={() => setLogoutModalOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+            onClick={() => {
+              dispatch(logout());
+              setLogoutModalOpen(false);
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
