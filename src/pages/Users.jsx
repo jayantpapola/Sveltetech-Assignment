@@ -1,11 +1,13 @@
 // src/pages/Users.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   fetchUsers,
   deleteUser,
   updateUser,
 } from "../redux/reducers/usersSlice";
+import toast from "react-hot-toast";
+import Input from "../components/Input";
 
 export default function Users() {
   const dispatch = useDispatch();
@@ -24,71 +26,115 @@ export default function Users() {
     }
   }, [status, dispatch]);
 
-  const filteredUsers = list.filter(
-    (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+  // useMemo to avoid unnecessary recomputations
+  const filteredUsers = useMemo(
+    () =>
+      list.filter(
+        (user) =>
+          user.name.toLowerCase().includes(search.toLowerCase()) ||
+          user.email.toLowerCase().includes(search.toLowerCase())
+      ),
+    [list, search]
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const displayedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const totalPages = useMemo(
+    () => Math.ceil(filteredUsers.length / itemsPerPage),
+    [filteredUsers.length]
   );
 
-  // Handle edit modal open
-  const openEditModal = (user) => {
+  const displayedUsers = useMemo(
+    () =>
+      filteredUsers.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      ),
+    [filteredUsers, currentPage]
+  );
+
+  // Handlers
+  const openEditModal = useCallback((user) => {
     setEditingUser(user);
     setFormData({ name: user.name, email: user.email });
-  };
+  }, []);
 
-  // Handle edit submit
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    dispatch(updateUser({ ...editingUser, ...formData }));
-    setEditingUser(null);
-  };
+  const handleEditSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      dispatch(updateUser({ ...editingUser, ...formData }));
+      setEditingUser(null);
+      toast.success("User updated successfully!");
+    },
+    [dispatch, editingUser, formData]
+  );
 
-  if (status === "loading") return <p className="p-4">Loading...</p>;
-  if (status === "failed") return <p className="p-4 text-red-500">{error}</p>;
+  // Loading State
+  if (status === "loading")
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <p className="animate-pulse text-gray-500 dark:text-gray-400">
+          Loading users...
+        </p>
+      </div>
+    );
+
+  // Error + Retry State
+  if (status === "failed")
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[200px] space-y-4">
+        <p className="text-red-500 font-medium">⚠ {error}</p>
+        <button
+          onClick={() => dispatch(fetchUsers())}
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Users</h1>
+      <h1 className="text-2xl font-bold mb-6">Users</h1>
 
       {/* Search Bar */}
-      <input
-        type="text"
-        placeholder="Search users..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 p-2 border rounded w-full 
-             bg-white dark:bg-gray-800 
-             text-black dark:text-white 
-             border-gray-300 dark:border-gray-600"
-      />
+      <div className="mb-6">
+        <Input
+          type="text"
+          placeholder="Search users..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset to first page when searching
+          }}
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-800 outline-none"
+        />
+      </div>
 
       {/* Users List */}
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {displayedUsers.map((user) => (
           <li
             key={user.id}
-            className="flex justify-between items-center p-3 bg-gray-100 dark:bg-gray-800 rounded-lg shadow"
+            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl shadow hover:shadow-md transition"
           >
             <div>
-              <p className="font-medium">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.email}</p>
+              <p className="font-semibold">{user.name}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {user.email}
+              </p>
             </div>
-            <div className="space-x-2">
+            <div className="flex gap-2">
               <button
-                className="px-3 py-1 text-sm bg-blue-500 text-white rounded"
                 onClick={() => openEditModal(user)}
+                className="px-3 py-1 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
               >
                 Edit
               </button>
               <button
-                className="px-3 py-1 text-sm bg-red-500 text-white rounded"
-                onClick={() => dispatch(deleteUser(user.id))}
+                onClick={() => {
+                  dispatch(deleteUser(user.id));
+                  toast.success("User Deleted successfully!");
+                }}
+                className="px-3 py-1 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
               >
                 Delete
               </button>
@@ -98,61 +144,57 @@ export default function Users() {
       </ul>
 
       {/* Pagination */}
-      <div className="flex justify-center mt-4 space-x-2">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded ${
-              currentPage === i + 1
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6 gap-2">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingUser && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6 animate-fadeIn">
             <h2 className="text-xl font-bold mb-4">Edit User</h2>
-            <form onSubmit={handleEditSubmit} className="space-y-3">
-              <input
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <Input
                 type="text"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
-                className="mb-4 p-2 border rounded w-full 
-             bg-white dark:bg-gray-800 
-             text-black dark:text-white 
-             border-gray-300 dark:border-gray-600"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <input
+              <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, email: e.target.value }))
                 }
-                className="mb-4 p-2 border rounded w-full 
-             bg-white dark:bg-gray-800 
-             text-black dark:text-white 
-             border-gray-300 dark:border-gray-600"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  className="px-3 py-1 bg-gray-400 text-white rounded"
                   onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 bg-green-500 text-white rounded"
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
                 >
                   Save
                 </button>

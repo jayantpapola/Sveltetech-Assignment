@@ -42,9 +42,7 @@ const slice = createSlice({
       state.isAuthenticated = false;
       Cookies.remove("auth");
     },
-    loadAuth(state, action) {
-      // noop, handled by initialState
-    },
+    
   },
 });
 

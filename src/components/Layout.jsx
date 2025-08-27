@@ -26,7 +26,7 @@ export default function Layout() {
       <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-white/80 backdrop-blur border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-800 flex items-center px-4 z-20">
         <div className="flex-1">
           <Link to="/dashboard" className="font-semibold text-lg">
-            My Dashboard
+            Sveltetech Assignment
           </Link>
         </div>
 
@@ -37,12 +37,7 @@ export default function Layout() {
           >
             Toggle Theme
           </button>
-          <Link
-            to="/settings"
-            className="text-sm hover:underline hidden md:inline"
-          >
-            Settings
-          </Link>
+
           <Button
             className="bg-gray-200 dark:bg-gray-800"
             onClick={() => dispatch(logout())}
