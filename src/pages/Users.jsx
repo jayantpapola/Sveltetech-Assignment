@@ -19,7 +19,7 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({ name: "", email: "" });
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 4;
 
   useEffect(() => {
     if (status === "idle") {
