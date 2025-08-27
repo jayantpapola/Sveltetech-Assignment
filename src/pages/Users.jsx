@@ -8,6 +8,7 @@ import {
 } from "../redux/reducers/usersSlice";
 import toast from "react-hot-toast";
 import Input from "../components/Input";
+import Modal from "../components/Modal";
 
 export default function Users() {
   const dispatch = useDispatch();
@@ -163,46 +164,46 @@ export default function Users() {
       )}
 
       {/* Edit Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6 animate-fadeIn">
-            <h2 className="text-xl font-bold mb-4">Edit User</h2>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <Input
-                type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingUser(null)}
-                  className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
+
+      <Modal
+        open={!!editingUser}
+        onClose={() => setEditingUser(null)}
+        title="Edit User"
+      >
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, email: e.target.value }))
+            }
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditingUser(null)}
+              className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              Save
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }
